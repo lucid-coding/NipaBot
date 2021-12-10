@@ -1,0 +1,55 @@
+#bot part doesn't yet work and have no purpose yet
+bot:
+    token:   "your_token"
+    prefix:  "!"
+
+#default role is same thing is everyone role.
+roles:
+        moderator:      &MODS_ROLE              807624518909820958
+        admin:          &ADMINS_ROLE            807924308114407435
+        owner:          &OWNERS_ROLE            807626654184374302
+        bot:                                    810435694380056599  #role the bot has is required (the main role of bot)
+        muted:          &MUTE                   819156401238048808
+        default:                                776140379442905098
+        video:                                  882677702237241384
+        trusted1:       &IS_TRUSTED_1           833841708805652481
+        truested2:      &IS_TRUSTED_2           834834361680789515
+        truested3:      &IS_TRUSTED_3                
+
+#Users with this role are allowed to execute moderation commands
+modroles:
+        - *ADMINS_ROLE
+        - *MODS_ROLE
+        - *OWNERS_ROLE
+
+trusted:
+        - *IS_TRUSTED_1
+        - *OWNERS_ROLE
+        - *ADMINS_ROLE
+        - *MODS_ROLE
+#Owner of guild(with this role)
+owners:
+        - *OWNERS_ROLE
+
+
+#Channel to forward dms from users to bot
+channels:
+        forward:        &DM             827204851971915847
+        welcome:                        
+        modlog:                         889201348707483688 #887428433972449301
+
+forward:
+        - *DM
+
+infraction:
+        - *MUTE
+
+apis:
+        clientid:       &ID             FHcC_DOf8AsM4g  #example variables
+        clientsecret:   &SECRET         1WYgef8FSWGjkl3usWScRQaFOl65Mw
+        useragent:      &AGENT          Meme scraper 1.0
+
+api:
+        - *ID
+        - *SECRET
+        - *AGENT

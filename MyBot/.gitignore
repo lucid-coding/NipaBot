@@ -1,0 +1,13 @@
+*.env
+.env
+MyBot/.env
+MyBot/__pycache__
+MyBot/cogs/__pycache__
+MyBot/cogs/moderation/__pycache__
+MyBot/cogs/other/__pycache__
+MyBot/utils/__pycache__
+__pycache__
+./modmail
+ModMail
+./test
+test
