@@ -1,5 +1,5 @@
 # Nipa-bot
-My simple Discord bot made in python using discord.py
+My simple Discord bot made in python using disnake
 
 # Bot
 
