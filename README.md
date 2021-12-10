@@ -27,4 +27,4 @@ Bot **is not** suitable for big servers.
 
 ## DATABASE
 
-Bot uses **SQLite** as database to store infractions and some information such as message log(when was created, and by who). **Bot creates the database tables automatically**, but **YOU NEED TO** make the file like: *database.db*.  The feature is **NOT READY!**
+Bot uses **SQLite** as database to store infractions. Also used to some random stuff. **Bot creates the database tables automatically**, 
