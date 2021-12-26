@@ -23,15 +23,15 @@ class configuration(commands.Cog):
     @commands.group()
     async def edit(self, ctx):
         """Group commands for editing and configuration of server"""
-        if ctx.invoked_subcommand is None:
+        if not ctx.invoked_subcommand:
             await ctx.send_help(ctx.command.name)
 
     @edit.command()
     async def msg(self, ctx, message: int, channel: typing.Optional[disnake.TextChannel] = None, *, content: str = None):
         """Edits a message sent by bot. Does not work for editing Embed content"""
-        if content is None:
+        if not content:
             await ctx.send("Message content is not provided")
-        if channel is None:
+        if not channel :
             channel = ctx.channel
         msgs = await channel.fetch_message(message)
         await msgs.edit(content=content)
@@ -41,12 +41,12 @@ class configuration(commands.Cog):
         """Sets overwrites for current channel to None"""
         #perms = ctx.channel.overwrites_for(role)
         #67437633 for proper mute perms
-        await ctx.channel.set_permissions(role, overwrite=None)
-        #perms = disnake.Permissions(permissions)
-        #await ctx.channel.PermissionsOverwrite(role, permissions=perms)
-        #await role.edit(permissions=perms)
-        await ctx.send("Success")
-
+        try:
+            await ctx.channel.set_permissions(role, overwrite=None)
+            #if that errored it would still send Success
+            await ctx.send("Success")
+        except Exception as error:
+            raise error
     @commands.command()
     async def logs(self, ctx, amount: int = 20):
         if amount > 100:
