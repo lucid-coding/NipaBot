@@ -26,13 +26,11 @@ class DmSender(commands.Cog):
         
     @commands.Cog.listener()
     async def on_message(self, message: disnake.Message):
-        #gets the main forward channel
+        """gets the main forward channel"""
         channel = self.bot.get_channel(self.forward)
-        if message.guild:
+        if message.guild or message.author.bot:
             return
 
-        if message.author.bot:
-            return
 
         if message.content is not None:    
             embed = disnake.Embed(title="Confirm thread creation", description="This system is for reporting concerns to the moderators, and is not intended for other purposes.")
