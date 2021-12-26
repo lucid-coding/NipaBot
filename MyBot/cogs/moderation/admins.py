@@ -13,10 +13,10 @@ import re
 from typing import Optional
 
 from MyBot.utils.constants import DATABASE
-from MyBot.utils.constants import owner_check, check_author, default_role, mute, modlog
+from MyBot.utils.constants import Constants #import owner_check, check_author, default_role, mute, modlog
 from MyBot.utils.constants import SPECIAL, NAMES
 from MyBot.utils.converters import _has_invites
-
+from MyBot.utils.decorators.deco import respect_role_hierarchy, has_no_roles
 import logging
 
 log = logging.getLogger(__name__)
@@ -25,13 +25,13 @@ class Moderation(commands.Cog):
     """The servers moderation command, containing most of import ones."""
     def __init__(self, bot):
         self.bot = bot
-        self.owner_id = owner_check()
-        self.mod_id = check_author()[0]
-        self.admin_id = check_author()[1]
-        self.default = default_role()
+        self.owner_id = Constants.owner_check()
+        self.mod_id = Constants.check_author()[0]
+        self.admin_id = Constants.check_author()[1]
+        self.default = Constants.default_role()
         self.cooldown = commands.CooldownMapping.from_cooldown(4.0, 10.0, commands.BucketType.member)
         self.tempm.start()
-        self.mod_log = modlog()
+        self.mod_log = Constants.modlog()
         
     @commands.command()
     async def kick(self, ctx, member: disnake.Member, *, reason: str):
@@ -51,7 +51,8 @@ class Moderation(commands.Cog):
             await member.kick(reason=reason)
             
     @commands.command()
-    async def ban(self, ctx, member: disnake.Member, * , reason: str):
+    @respect_role_hierarchy(member_arg=2)
+    async def ban(self, ctx, member: typing.Union[disnake.Member, disnake.User], * , reason: str):
         '''Bans member from guild with given reason'''
         role = ctx.guild.get_role(self.owner_id)
         mod = ctx.guild.get_role(self.mod_id)
@@ -68,26 +69,44 @@ class Moderation(commands.Cog):
             await ctx.send(f"📨👌 applied ban to {member.mention}\n reason:{reason}")
 
     @commands.command()
-    async def unban(self, ctx, *, userid: int = None):
-        '''Unbans member from guild'''
-        banlist = await ctx.guild.bans()
-        user = None
-        for ban in banlist:
-            if ban.user.id == userid:
-        	    user = ban.user
-        await ctx.guild.unban(user)
-        log.info(f"{ctx.author} has unbanned {user}")
+    async def unban(self, ctx, member: typing.Union[disnake.Member, disnake.User] = None):
+        """Unbans user from the current guild"""
+        if isinstance(member, disnake.Member):
+            #return await ctx.send("That seems to be a guild member, we can't unban them")
+            log.info("Command: unban param `member` is type of `disnake.Member`")
+        elif isinstance(member, disnake.User):
+            log.info("Command: unban param `member` is type of `disnake.User`")
+
+        ctx.guild.unban(member)
+        await ctx.send("Succesfully unbanned member")
+        log.info(f"{ctx.author} has unbanned {member}")
+        
+    @commands.command()
+    @respect_role_hierarchy(member_arg=2)
+    async def to(self, ctx, member: disnake.Member, duration: int, reason: typing.Optional[str] = None):
+        """
+        Timeouts member from guild for duration of seconds given. 
+        To remove timeout the duration must be 0. Reason can be None
+        """ 
+        if reason is None:
+            reason = "You have been timed out from guild due to moderation actions."
+        await member.timeout(duration=duration, reason=reason)  
+        await ctx.send(f"{ctx.author.mention} succesfully timed out {member.mention} from guild.")
 
     @commands.command()
-    async def mute(self, ctx, member: disnake.Member, message: str=None):
+    async def mute(self, ctx, member: disnake.Member, *,message: str=None):
         '''Mutes from chatting, has no time setting. Will be more likely chat ban. NOTE: recommended to use tempmute'''
         role = ctx.guild.get_role(self.owner_id)
         if role in member.roles:
             return await ctx.send("You can't do that to owner")
         if message is None:
             message = 'No time specified'
-        muted_role = disnake.utils.get(ctx.guild.roles, id=mute())
+        muted_role = disnake.utils.get(ctx.guild.roles, id=Constants.mute())
         if not muted_role:
+            return
+        if muted_role in member.roles:
+            return await ctx.send("Member is already muted")
+            print("Role not found")
             perms = disnake.PermissionOverwrite(send_messages=False, read_message_history=True, manage_channels=False, manage_permissions=False, manage_webhooks=False, create_instant_invite=False, embed_links=False, attach_files=False, add_reactions=False, manage_messages=False, use_slash_commands=False, send_tts_messages=False, mention_everyone=False, use_external_emojis=False, view_channel=True)
             muted = await ctx.guild.create_role(name="Muted", permissions=perms)
             for channels in ctx.guild.text_channels:
@@ -104,7 +123,7 @@ class Moderation(commands.Cog):
         user_id = member.id
         apply_time = datetime.now()
         guild = member.guild.id
-        role = mute()
+        role = Constants.mute()
         if time is None:
             time = apply_time + timedelta(hours=1)
         else:
@@ -128,10 +147,10 @@ class Moderation(commands.Cog):
     @commands.command()
     async def unmute(self, ctx, member: disnake.Member):
         '''Unmutes member'''
-        muted_role = disnake.utils.get(ctx.guild.roles, id=mute())
-        if not muted_role:
-            await ctx.send("User is not muted")
-            await ctx.message.add_reaction("❌")
+        muted_role = disnake.utils.get(ctx.guild.roles, id=Constants.mute())
+        if not muted_role in member.roles:
+            return await ctx.send("User is not muted")
+            #await ctx.message.add_reaction("❌")
         else:
             await member.remove_roles(muted_role)
             await ctx.send(f"pardoned mute for {member.mention}")
@@ -185,20 +204,19 @@ class Moderation(commands.Cog):
             await ctx.send(embed=undeafEm)
     
     @commands.command(aliases=["hush", "shh", "shhh"])
-    async def silence(self, ctx, time: int = None):
-        '''Silences the channel for default role'''
+    async def silence(self, ctx, time: int = None, channel: typing.Optional[disnake.TextChannel] = None):
+        '''Silences the channel for default role, time is given in minutes.'''
         #print(self.default)
         role = ctx.guild.get_role(self.default)
         if time is None:
             time = 60 * 10
         else:
             time = time * 60
-        print(role.id)
         perms = ctx.channel.overwrites_for(role)
         
         perms.send_messages = False
-        await ctx.channel.set_permissions(role, overwrite=perms)
         await ctx.send(f"{ctx.author.mention} has silenced the channel for {time / 60} minutes.")
+        await ctx.channel.set_permissions(role, overwrite=perms)
         await asyncio.sleep(time)
         #Launch unsilence
         perms = ctx.channel.overwrites_for(role)
@@ -427,6 +445,7 @@ class Moderation(commands.Cog):
                 try: 
                     guild_id = userinfo[0][0]
                     mute_role = userinfo[0][1]
+                    print(f"Hi\n\n{mute_role}\n\n")
                     user = userinfo[0][2]
                 except IndexError:
                     return
@@ -440,7 +459,7 @@ class Moderation(commands.Cog):
                     print("REMOVING ROLES")
                     await db.execute("DELETE FROM infractions WHERE user_id = ?", (user,))
                     await db.commit()
-                                        
+    
     @tempm.before_loop
     async def before_muted_check(self):
         await self.bot.wait_until_ready()
@@ -448,7 +467,7 @@ class Moderation(commands.Cog):
     async def cog_check(self, ctx):
         '''Allow only moderators to invoke these commands'''
         user_role_ids = [role.id for role in ctx.author.roles]
-        return ctx.author.id == SPECIAL or any(role in user_role_ids for role in check_author())
+        return ctx.author.id == SPECIAL or any(role in user_role_ids for role in Constants.check_author())
 
 def setup(bot):
     bot.add_cog(Moderation(bot))

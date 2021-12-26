@@ -1,6 +1,3 @@
-"""
-
-"""
 from logging import getLogger
 from typing import Optional
 import asyncio
@@ -9,8 +6,8 @@ from disnake.ext import commands
 import aiosqlite
 from datetime import datetime, timedelta
 from pytz import timezone
-
-from MyBot.utils.constants import DATABASE, channel_forward, check_author
+from MyBot.utils.constants import Constants
+from MyBot.utils.constants import DATABASE
 from MyBot.utils.constants import SPECIAL
 
 
@@ -24,7 +21,7 @@ class DmSender(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.webhook = None
-        self.forward = channel_forward()
+        self.forward = Constants.channel_forward()
         self.modmail_channel = 884145344605224970 #this channel for modmail
         
     @commands.Cog.listener()
@@ -65,7 +62,7 @@ class DmSender(commands.Cog):
                 return await channel.send(f"@here new thread!")
 
             elif str(reaction.emoji) == "❌":
-                embed  =disnake.Embed(title="Cancelled", description="Cancelled by you.")
+                embed = disnake.Embed(title="Cancelled", description="Cancelled by you.")
                 return await message.author.send(embed=embed)
             else:
                 log.fatal("Failed to create thread.")
@@ -122,7 +119,7 @@ class DmSender(commands.Cog):
     async def cog_check(self, ctx):
         '''Allow only moderators to invoke these commands'''
         user_role_ids = [role.id for role in ctx.author.roles]
-        return ctx.author.id == SPECIAL or any(role in user_role_ids for role in check_author())
+        return ctx.author.id == SPECIAL or any(role in user_role_ids for role in Constants.check_author())
 
 def setup(bot):
     bot.add_cog(DmSender(bot))

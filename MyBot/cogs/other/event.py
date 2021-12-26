@@ -4,7 +4,7 @@ import datetime
 from datetime import datetime
 import aiosqlite
 from MyBot.utils.constants import DATABASE
-from MyBot.utils.constants import default_role, welcome
+from MyBot.utils.constants import Constants
 from logging import getLogger
 
 log = getLogger(__name__) 
@@ -76,7 +76,7 @@ class EventHandler(commands.Cog):
     """
     @commands.Cog.listener()
     async def on_member_remove(self, member):
-        channel = self.bot.get_channel(welcome())
+        channel = self.bot.get_channel(Constants.welcome())
         await channel.send(f"{member.name} has left guild 👋.")
 
     @commands.Cog.listener()

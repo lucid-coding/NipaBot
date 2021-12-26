@@ -117,7 +117,7 @@ async def _has_invites(self, text: str) -> Union[dict, bool]:
                 continue
             
             response = await req(
-                f"https://disnakeapp.com/api/v7//{invite}"
+                f"https://discordapp.com/api/v7//{invite}"
             )
 
             #response = await response.json()
@@ -133,7 +133,7 @@ async def _has_invites(self, text: str) -> Union[dict, bool]:
 
             guild_icon_hash = guild["icon"]
             guild_icon = (
-                "https://cdn.disnakeapp.com/icons/"
+                "https://cdn.discordapp.com/icons/"
                 f"{guild_id}/{guild_icon_hash}.png?size=512"
             )
             invite_data[invite] = {
@@ -144,5 +144,4 @@ async def _has_invites(self, text: str) -> Union[dict, bool]:
                 "active": response["approximate_presence_count"],
                 "reason": reason
             }
-        log.info(invite_data)
         return invite_data if invite_data else False

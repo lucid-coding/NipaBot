@@ -1,8 +1,17 @@
 import pathlib
 import yaml
+import functools
+from pathlib import path
 
 #path pre set
-DATABASE = r"MyBot/database/sqlite.db"
+if path("MyBot/database/sqlite.db").exists():
+    """Will check if database used for development exists"""
+    DATABASE = r"MyBot/database/sqlite.db" 
+    #this is database file that will be ignored on commit
+elif path("MyBot/database/database.db").exists():
+    """Checks if the database given by default exist."""
+    DATABASE = r"MyBot/database/database.db"
+
 #path pre set
 CONFIG_PATH = pathlib.Path(r"MyBot/utils/config.yaml")
 
@@ -20,70 +29,60 @@ NAMES = [
     "ButterFingers"
     "Captain Starified"
 ]
+@functools.lru_cache
+def load():
+    """Loader function to load data from connfig.yaml"""
+    with open(CONFIG_PATH) as file:
+        items = yaml.load(file, Loader=yaml.FullLoader)
+    return items
 
-#returns list of moderators roles
-def check_author():
-    with open(f"{CONFIG_PATH}") as file:
-        items = yaml.load(file, Loader=yaml.FullLoader)
-    mod_id = []
-    for x in items['modroles']:
-        mod_id.append(x)
-    #print(mod_id)
-    return mod_id
+class Constants:
+    """Constants class to manage receiving information from config.yaml"""
+    def __init__(self):
+        self.path = CONFIG_PATH
 
-##returns owner role
-def owner_check():
-    with open(f"{CONFIG_PATH}") as file:
-        items = yaml.load(file, Loader=yaml.FullLoader)
-    owner_id = []
-    for x in items['owners']:
-        owner_id.append(x)
-    return owner_id[0]
-#returns a channel where DMs are relayed in 
-def channel_forward():
-    with open(f"{CONFIG_PATH}") as file:
-        items = yaml.load(file, Loader=yaml.FullLoader)
-    chann = []
-    for x in items['forward']:
-        chann.append(x)
-    return chann[0]
-#returns the default member role
-def default_role():
-    with open(f"{CONFIG_PATH}") as file:
-        items = yaml.load(file, Loader=yaml.FullLoader)
-    def_role = items['roles']['default']
-    return def_role
-#returns muted role id.
-def mute():
-    with open(f"{CONFIG_PATH}") as file:
-        items = yaml.load(file, Loader=yaml.FullLoader)
-    muted = items['infraction']
-    return muted[0]
+    def check_author():
+        """Returns a list of mod roles"""
+        mod_id = []
+        for x in load()['modroles']:
+            mod_id.append(x)
+        return mod_id
 
-def modlog():
-    with open(f"{CONFIG_PATH}") as file:
-        items = yaml.load(file, Loader=yaml.FullLoader)
-    modlog_channel = items["channels"]["modlog"]
-    return modlog_channel
+    def is_trusted():
+        """Returns the list of trusted roles, does not yet have a usage"""
+        trusted_roles = []
+        for x in load()['trusted']:
+            trusted_roles.append(x)
+        return trusted_roles
 
-def welcome():
-    with open(f"{CONFIG_PATH}") as file:
-        items = yaml.load(file, Loader=yaml.FullLoader)
-    welcome_channel = items['channels']['welcome']
-    return welcome_channel
+    def meme():
+        """Returns the information of Reddit API. Sadly the API does not work anymore"""
+        info = []
+        for x in load()["api"]:
+            info.append(x)
+        return info
 
-def is_trusted():
-    with open(f"{CONFIG_PATH}") as file:
-        items = yaml.load(file, Loader=yaml.FullLoader)
-    trusted_roles = []
-    for x in items['trusted']:
-        trusted_roles.append(x)
-    return trusted_roles
+    def owner_check():
+        """Returns the owners role"""
+        return load()['owners'][0]
 
-def meme():
-    with open(f"{CONFIG_PATH}") as file:
-        items = yaml.load(file, Loader=yaml.FullLoader)
-    info = []
-    for x in items["api"]:
-        info.append(x)
-    return info
+    def channel_forward():
+        """Returns the channel where DMs are forwarded to."""
+        return load()['forward'][0]
+
+    def default_role():
+        """Returns the default role of server that is given in the configuration file."""
+        return load()['roles']['default']
+    
+    def modlog():
+        """Returns the modlog channel of the server"""
+        return load()["channels"]["modlog"]
+
+    def welcome():
+        """Returns the welcome channel of the server"""
+        return load()['channels']['welcome']
+
+    def mute():
+        """Returns the muted role of the server"""
+        return load()['infraction'][0]
+

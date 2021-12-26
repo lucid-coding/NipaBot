@@ -75,17 +75,17 @@ class Music(commands.Cog):
 
         await ctx.send(f"Now playing: {query}")
 
-    @commands.command()
-    async def yt(self, ctx, *, url):
-        """Plays from a url (almost anything youtube_dl supports)"""
-        await self.ensure_voice(ctx)
-        async with ctx.typing():
-            player = await YTDLSource.from_url(url, loop=self.bot.loop)
-            print("playing")
-            ctx.voice_client.play(
-                player, after=lambda e: print(f"Player error: {e}") if e else None
-            )
-        await ctx.send(f"Now playing: {player.title}")
+#    @commands.command()
+#    async def yt(self, ctx, *, url):
+#        """Plays from a url (almost anything youtube_dl supports)"""
+#        await self.ensure_voice(ctx)
+#        async with ctx.typing():
+#            player = await YTDLSource.from_url(url, loop=self.bot.loop)
+#            print("playing")
+#            ctx.voice_client.play(
+#                player, after=lambda e: print(f"Player error: {e}") if e else None
+#            )
+#        await ctx.send(f"Now playing: {player.title}")
 
     @commands.command()
     async def stream(self, ctx, *, url):

@@ -1,35 +1,32 @@
 import disnake
-from disnake.ext import commands
+from disnake.components import C
+from disnake.ext import commands, tasks
 from disnake.errors import InvalidArgument
 from disnake.ext.commands import clean_content
 from disnake.utils import get
-from disnake import AllowedMentions, Colour, Embed, Guild, Message, Role
+from disnake import Embed, Guild, Message, Role
 from disnake.utils import escape_markdown
 
-from MyBot.utils.constants import meme
 from MyBot.utils.converters import DurationDelta, Duration
 from MyBot.utils.factory import ModLog
 from MyBot.utils.decorators.deco import restrict_to_user
-from MyBot.utils. paginator import EmbedPaginator
+from MyBot.utils.paginator import EmbedPaginator
+from MyBot.utils.constants import DATABASE
+
 import rapidfuzz
 import colorsys
-import pprint
-import textwrap
-from collections import defaultdict
-from typing import Any, DefaultDict, Mapping, Optional, Tuple, Union
-
+from typing import Union
+import datetime
 import requests
 import os
-import random
 import inspect
 from inspect import getsource
 from pathlib import PurePath
-import asyncpraw
 import time
 import asyncio
 import logging
-from datetime import datetime, timedelta
-
+import aiosqlite
+import typing
 #statuses 
 
 '''
@@ -63,6 +60,7 @@ class General(commands.Cog):
         self.modlog = ModLog
         self.webhook = WEBHOOK_URL
         self.webhook_id = WEBHOOK_ID
+        self.check_reminders.start()
 
     @commands.command()
     @restrict_to_user(534738044004335626)
@@ -75,6 +73,12 @@ class General(commands.Cog):
                 )
 
         await ModLog.send_webhook(self, content)
+    
+    @commands.command()
+    async def embedder(self, ctx):
+        print("test")
+        embed = disnake.Embed(title="Help command", description=" ")
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def test_embed(self, ctx):
@@ -120,7 +124,7 @@ class General(commands.Cog):
     async def send_webhook(self, ctx):
         content = await self.modlog.send_log_message(
             self, colour=disnake.Color.red(), title="Access denied", 
-            text="Sample text", icon_url=ctx.author.avtar.url, 
+            text="Sample text", icon_url=ctx.author.avatar.url, 
             content="Sample content", footer="Sample footer", ping_everyone=True
             #thumbnail="Sample thumbnail"
             )
@@ -154,37 +158,8 @@ class General(commands.Cog):
         codeM.add_field(name="This is how to format Python code", value="\`\`\`py \nThe code\n\`\`\`\n**These are backticks, not quotes.**")
         await ctx.send(embed=codeM)
 
-    #unknow error in the meme commands. The error have not been traceked down.
-    @commands.group()
-    @commands.cooldown(1, 3)
-    async def meme(self, ctx):
-        '''Meme command'''
-        await ctx.message.delete()
-        if ctx.invoked_subcommand is None:
-            await ctx.send("No meme source provided, type '!help meme' to see choices")
-    
-    @meme.command()
-    async def dankmemes(self, ctx):
-        reddit = asyncpraw.Reddit(client_id=f'{meme()[0]}',
-                     client_secret=f'{meme()[1]}',
-                     user_agent=f'{meme()[2]}')
-        memes_submissions = await reddit.subreddit('dankmemes').hot()
-        post_to_pick = random.randint(1, 20)
-        for i in range(0, post_to_pick):
-            submission = next(x for x in memes_submissions if not x.stickied)
-        await ctx.send(submission.url)
-
-    @meme.command()
-    async def memes(self, ctx):
-        reddit = asyncpraw.Reddit(client_id=f'{meme()[0]}',
-                     client_secret=f'{meme()[1]}',
-                     user_agent=f'{meme()[2]}')
-        memes_submissions = await reddit.subreddit('memes').hot()
-        post_to_pick = random.randint(1, 20)
-        for i in range(0, post_to_pick):
-            submission = next(x for x in memes_submissions if not x.stickied)
-        await ctx.send(submission.url)
-
+    # Meme command has been removed from the bot. The reason is that I don't want to
+    # request API keys and stuff from reddit. Most likely the feature will not come back
     @commands.command()
     @commands.cooldown(1, 5)
     async def server(self, ctx):
@@ -194,8 +169,8 @@ class General(commands.Cog):
         d = ctx.guild.created_at
         embed = disnake.Embed(title=f"Server information", description=f"Information of {ctx.guild.name}", color=ctx.author.color) #Server created: {year_difference}, {month_difference} and {day_difference} ago")
         embed.add_field(name="General", value=f"Members: {member_count}\nRoles: {role_count}\n")
-        embed.set_thumbnail(url=f"{ctx.guild.icon_url}")
-        embed.set_author(name="NipaDev")
+        embed.set_thumbnail(url=f"{ctx.guild.icon.url}")
+        embed.set_author(name=f"{ctx.guild.name}")
         await ctx.send(embed=embed)
 
     @commands.command(aliases=["nick", "newname"])
@@ -206,13 +181,15 @@ class General(commands.Cog):
         await ctx.send(f'Nickname was changed for {ctx.author.mention} ')
 
     @commands.command(aliases=["src"])
-    @commands.cooldown(1, 30)
     async def source(self, ctx: commands.Context, command: str=None):
         '''Shows source of commands, and links it to github'''
         my_command = self.bot.get_command(command)
+        folder = my_command.callback.__code__.co_filename
+        folder = folder.split("\\")[-2] 
+        print(folder)
         if command is None:
             return await ctx.send("Please provide the command name")
-            
+
         if not my_command:
             return await ctx.send("Command not found")
         else:
@@ -225,18 +202,14 @@ class General(commands.Cog):
             filename = PurePath(file_path).name
 
             if len(code) > 1900:
-                file = open(f'{command}.py', "w", encoding='utf-8')
-                file.write(code)
-                file.close()
-                await ctx.send(file = disnake.File(f'{command}.py'))
-                os.remove(f'./{command}.py')
+                log.info("The code is longer than 1900 chars, nothing important. continue")
             else:
-                embed = disnake.Embed(title="Bot's GitHub Repository", color=ctx.author.color)
-                embed.add_field(name=f"Source of command '{my_command}'", value=f"[Github link](https://github.com/Nipa-Code/Nipa-bot/tree/master/MyBot/cogs/{filename}#L{first_line}-L{end_line})")
+                embed = disnake.Embed(title=f"Bot's GitHub Repository for commanf '{my_command}'", color=ctx.author.color)
+                embed.add_field(name=f"Source of command '{my_command}'", value=f"[Github link](https://github.com/Nipa-Code/NipaBot/tree/master/MyBot/cogs/{folder}/{filename}#L{first_line}-L{end_line})")
                 await ctx.send(embed=embed)
 
     @commands.command(aliases=("poll",))
-    @commands.has_any_role(833841708805652481)
+    #@commands.has_any_role(833841708805652481)
     async def vote(self, ctx: commands.Context, title: clean_content(fix_channel_mentions=True), *options: str) -> None:
         """
         Allow max 20 options to be passed. A simple poll command that generates a poll embed with x amount of reactions
@@ -293,7 +266,7 @@ class General(commands.Cog):
 
         embed = disnake.Embed(title="Bookmark" if title is None else title, description=f"{content_of_description}...", color=ctx.author.color)
         embed.add_field(name="Visit the Bookmarked message", value=f"[visit original message]({url})")
-        embed.set_author(name=msg.author, icon_url=ctx.author.avtar.url)
+        embed.set_author(name=msg.author, icon_url=ctx.author.avatar.url)
         embed.set_thumbnail(url="https://images-ext-2.disnakeapp.net/external/zl4oDwcmxUILY7sD9ZWE2fU5R7n6QcxEmPYSE5eddbg/%3Fv%3D1/https/cdn.disnakeapp.com/emojis/654080405988966419.png?width=20&height=20")
         await ctx.author.send(embed=embed)
         
@@ -367,17 +340,67 @@ class General(commands.Cog):
         await ctx.send(f"Timestamp number: {int(ts)} \nConverted to: `<t:{int(ts)}:F>` in format F\nTimestamp: <t:{int(ts)}:F>")
 
     @commands.command()
-    async def remind(self, ctx, time: str, *, message: str):
-        b = await Duration().convert(ctx, time)
-        ts = b.timestamp()
+    async def remind(self, ctx, time: str, *, message: typing.Optional[str] = None):
+        """
+        A unit of time should be appended to the duration.
+        Units (∗case-sensitive):
+        \u2003`y` - years
+        \u2003`m` - months∗
+        \u2003`w` - weeks
+        \u2003`d` - days
+        \u2003`h` - hours
+        \u2003`M` - minutes∗
+        \u2003`s` - seconds
+        Alternatively, an ISO 8601 timestamp can be provided for the duration.
+        """
+        if message is None:
+            message = "Remind"
+        guild = ctx.guild.id
+        user = ctx.author.id
+        channel = ctx.channel.id
+        message = ctx.message.id
+        expire = await Duration().convert(ctx, time) # creates datetime object from given argument `time`
+        expire_date = str(expire) # used for database
+        print(expire_date)
+        print(expire)
+        async with aiosqlite.connect(DATABASE) as db:
+            await db.execute("INSERT INTO reminders VALUES(?, ?, ?, ?, ?)", (guild, user,channel, message, expire, ))
+            await db.commit()
+        #t = b + datetime.timedelta(seconds=1)
+        c = expire - datetime.datetime.now(datetime.timezone.utc)
+        time = int(c.total_seconds())
+        ts = expire.timestamp()
         #timestamp = 
         embed = disnake.Embed(
             title="Reminder set", 
             description=f"""
             Your reminder will arrive on <t:{int(ts)}:F>
-            But I won't ping you nor will I do anything because I'm bored
             """, color=ctx.author.color
             )
+        await ctx.send(embed=embed)
+        #await asyncio.sleep(time)
+        #await ctx.reply(content="Reminder arrived", mention_author=True)
+
+    @commands.command()
+    async def ui(self, ctx, member: disnake.Member=None):
+        if member is None:
+            member = ctx.author
+
+        member_status = ctx.guild.get_member(member.id)
+
+        name, status = str(member), member_status.raw_status
+        date_format = "%a, %b %d, %Y @ %I:%M %p" 
+        created_at = member.created_at.strftime(date_format)
+        joined_at = member.joined_at.strftime(date_format)
+            
+        roles = [role for role in member.roles]
+        rr = " ".join([role.mention for role in roles])
+
+        embed = disnake.Embed(title=name, description=status, colour=member.colour)
+        embed.add_field(name="Origin", value=created_at, inline=True)
+        embed.add_field(name="Joined", value=joined_at, inline=False)
+        embed.add_field(name="Roles", value=rr)
+        embed.set_thumbnail(url=member.avatar.url)
         await ctx.send(embed=embed)
 
     @commands.command()
@@ -447,6 +470,44 @@ class General(commands.Cog):
         embed = disnake.Embed(title=f"Message from {author}", description=content, color=ctx.author.color)
         await ctx.send(embed=embed)
     """
+    @tasks.loop(seconds=30.0)
+    async def check_reminders(self):
+        current_time = datetime.datetime.now(datetime.timezone.utc)
+        current_time_in_unix = current_time.timestamp()
+        print(current_time)
+        async with aiosqlite.connect(DATABASE) as db:
+            rows = await db.execute("SELECT guild_id, user_id, channel_id, message_id FROM reminders WHERE ? > expire", (current_time,))
+            data = await rows.fetchall()
+            if data is None or len(data) == 0:
+                return
+            else:
+                userinfo = []
+                for x in data:
+                    userinfo.append(x)
+                try: 
+                    guild_id = userinfo[0][0]
+                    user_id = userinfo[0][1]
+                    channel_id = userinfo[0][2]
+                    message_id = userinfo[0][3]
+                except IndexError:
+                    return
+                user_guild = self.bot.get_guild(guild_id)
+                the_member = user_guild.get_member(user_id)
+                channel = self.bot.get_channel(channel_id)
+                message = await channel.fetch_message(message_id)
+                if not user_guild or not the_member or not channel or not message:
+                    return
+                
+                else:
+                    await db.execute("DELETE FROM reminders WHERE ? > expire AND ? = user_id", (current_time, user_id))
+                    await db.commit()
+                    await message.reply("Your reminder has arrived")
 
+    @check_reminders.before_loop
+    async def ensure_bot(self):
+        await self.bot.wait_until_ready()
+
+            
 def setup(bot):
     bot.add_cog(General(bot))
+

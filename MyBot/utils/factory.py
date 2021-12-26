@@ -14,8 +14,8 @@ from disnake.ext.commands import Cog, Context
 from disnake.utils import escape_markdown
 from disnake import Webhook
 
-from MyBot.utils.constants import modlog, SPECIAL
-
+from MyBot.utils.constants import SPECIAL
+from MyBot.utils.constants import Constants
 from dotenv import load_dotenv, find_dotenv
 import os
 
@@ -37,7 +37,7 @@ class ModLog:
         title: t.Optional[str],
         text: str,
         thumbnail: t.Optional[t.Union[str, disnake.Asset]] = None,
-        channel_id: int = modlog(),
+        channel_id: int = Constants.modlog(),
         ping_everyone: bool = False,
         files: t.Optional[t.List[disnake.File]] = None,
         content: t.Optional[str] = None,

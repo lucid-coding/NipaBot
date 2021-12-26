@@ -6,6 +6,7 @@ MyBot/cogs/__pycache__
 MyBot/cogs/moderation/__pycache__
 MyBot/cogs/other/__pycache__
 MyBot/utils/__pycache__
+MyBot/database/sqlite.db
 __pycache__
 ./modmail
 ModMail

@@ -13,11 +13,11 @@ class Slash(commands.Cog):
     async def autocomplete_langs(self, inter: ApplicationCommandInteraction, string: str) -> List[str]:
         return [lang for lang in self.langs if string.lower() in lang.lower()]
 
-    @commands.slash_command(name="slashers", guild_ids=[776140379442905098])
+    @commands.slash_command(name="slashers", guild_ids=[776140379442905098, 808854246119178250])
     async def _test(self, inter: disnake.ApplicationCommandInteraction):
         await inter.response.send_message("hi")
 
-    @commands.slash_command(name="resp", guild_ids=[776140379442905098])
+    @commands.slash_command(name="resp", guild_ids=[776140379442905098, 808854246119178250])
     async def languages(self, inter: disnake.ApplicationCommandInteraction, language: str):
         await inter.response.send_message("return code 200")
         

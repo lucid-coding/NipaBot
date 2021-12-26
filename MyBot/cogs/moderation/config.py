@@ -5,7 +5,7 @@ from disnake.ext import tasks
 from disnake.ext.commands import clean_content
 import typing
 from MyBot.utils.constants import DATABASE
-from MyBot.utils.constants import owner_check, check_author, default_role
+from MyBot.utils.constants import Constants #import owner import owner_check, check_author, default_role
 from MyBot.utils.constants import SPECIAL, NAMES
 import datetime
 
@@ -17,7 +17,7 @@ class configuration(commands.Cog):
     """Configuration cog for the bot."""
     def __init__(self, bot):
         self.bot = bot
-        self.default = default_role()
+        self.default = Constants.default_role()
 
 
     @commands.group()
@@ -66,7 +66,7 @@ class configuration(commands.Cog):
     async def cog_check(self, ctx):
         '''Allow only moderators to invoke these commands'''
         user_role_ids = [role.id for role in ctx.author.roles]
-        return ctx.author.id == SPECIAL or any(role in user_role_ids for role in check_author())
+        return ctx.author.id == SPECIAL or any(role in user_role_ids for role in Constants.check_author())
 
 
 def setup(bot):

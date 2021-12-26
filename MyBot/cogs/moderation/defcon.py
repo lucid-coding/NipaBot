@@ -5,7 +5,7 @@ from disnake.ext import tasks
 from disnake.ext.commands import clean_content
 
 from MyBot.utils.constants import DATABASE
-from MyBot.utils.constants import owner_check, check_author, default_role
+from MyBot.utils.constants import Constants
 from MyBot.utils.constants import SPECIAL, NAMES, modlog
 from MyBot.utils.time.times import relativedelta_to_timedelta, _stringify_relativedelta
 from MyBot.utils.converters import format_user
@@ -33,7 +33,7 @@ log = logging.getLogger(__name__)
 class Defcon(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.default = default_role()
+        self.default = Constants.default_role()
         self.mod_log = modlog()
         self.threshold = relativedelta(days=0)
         self.expiry = None
@@ -133,7 +133,7 @@ class Defcon(commands.Cog):
     async def cog_check(self, ctx):
         '''Allow only moderators to invoke these commands'''
         user_role_ids = [role.id for role in ctx.author.roles]
-        return ctx.author.id == SPECIAL or any(role in user_role_ids for role in check_author())
+        return ctx.author.id == SPECIAL or any(role in user_role_ids for role in Constants.check_author())
 
 def setup(bot):
     bot.add_cog(Defcon(bot))

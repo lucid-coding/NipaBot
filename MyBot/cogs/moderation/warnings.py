@@ -2,7 +2,7 @@ import disnake
 from disnake.ext import commands
 import aiosqlite
 from MyBot.utils.constants import DATABASE
-from MyBot.utils.constants import owner_check, check_author
+from MyBot.utils.constants import Constants # import owner import owner_check, check_author
 from MyBot.utils.errors import InvalidInfractedUserError
 from MyBot.utils.constants import SPECIAL
 import logging
@@ -14,9 +14,9 @@ class Warning(commands.Cog):
     '''Cog for handling the warning system'''
     def __init__(self, bot):
         self.bot = bot
-        self.owner_id = owner_check()
-        self.mod_id = check_author()[0]
-        self.admin_id = check_author()[1]
+        self.owner_id = Constants.owner_check()
+        self.mod_id = Constants.check_author()[0]
+        self.admin_id = Constants.check_author()[1]
 
     @commands.command()
     async def warns(self, ctx, member: disnake.Member):
@@ -78,7 +78,7 @@ class Warning(commands.Cog):
     async def cog_check(self, ctx):
         '''Allow only moderators to invoke these commands'''
         user_role_ids = [role.id for role in ctx.author.roles]
-        return ctx.author.id == SPECIAL or any(role in user_role_ids for role in check_author())
+        return ctx.author.id == SPECIAL or any(role in user_role_ids for role in Constants.check_author())
 
 def setup(bot):
     bot.add_cog(Warning(bot))

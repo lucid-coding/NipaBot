@@ -8,7 +8,7 @@ import typing
 from datetime import datetime, timedelta
 
 from MyBot.utils.constants import DATABASE
-from MyBot.utils.constants import owner_check, check_author
+from MyBot.utils.constants import Constants # import owner import owner_check, check_author
 from MyBot.utils.errors import InvalidInfractedUserError
 from MyBot.utils.constants import SPECIAL, NAMES
 
@@ -59,8 +59,8 @@ class Mods(commands.Cog):
         except disnake.errors.Forbidden:
             log.warning("User has disabled DMs.")
 
-    @commands.command(aliases=["video", "videoshare"])
-    async def stream(self, ctx, member: disnake.Member, duration: str = None) -> None:
+    @commands.command(name="ustream", aliases=["video", "videoshare"])
+    async def stream_role(self, ctx, member: disnake.Member, duration: str = None) -> None:
         """
         Allows any user to be able to stream in voice chats, except muted users.
         Default value is 30 minutes if no duration is specified. 
@@ -123,8 +123,7 @@ class Mods(commands.Cog):
     async def cog_check(self, ctx):
         '''Allow only moderators to invoke these commands'''
         user_role_ids = [role.id for role in ctx.author.roles]
-        return ctx.author.id == SPECIAL or any(role in user_role_ids for role in check_author())
+        return ctx.author.id == SPECIAL or any(role in user_role_ids for role in Constants.check_author())
 
 def setup(bot):
     bot.add_cog(Mods(bot))
-

@@ -9,8 +9,8 @@ roles:
         admin:          &ADMINS_ROLE            807924308114407435
         owner:          &OWNERS_ROLE            807626654184374302
         bot:                                    810435694380056599  #role the bot has is required (the main role of bot)
-        muted:          &MUTE                   819156401238048808
-        default:                                776140379442905098
+        muted:          &MUTE                   906640844705128449
+        default:                                808854246119178250
         video:                                  882677702237241384
         trusted1:       &IS_TRUSTED_1           833841708805652481
         truested2:      &IS_TRUSTED_2           834834361680789515
